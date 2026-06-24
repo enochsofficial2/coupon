@@ -142,6 +142,7 @@
         
         .admin-card { background: var(--card-bg); border-radius: 12px; padding: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.02); margin-bottom: 24px; border: 1px solid #EEEEEE; }
         
+        /* 쿠폰 검색 바 스타일 */
         .coupon-search-bar { display: flex; gap: 10px; margin-bottom: 20px; background: #EAEAEA; padding: 15px; border-radius: 10px; align-items: center; }
         .coupon-search-bar input { flex: 1; padding: 10px; border: 1px solid #CCC; border-radius: 6px; font-size: 0.9rem; font-weight: bold; text-transform: uppercase; }
         
@@ -347,9 +348,18 @@
 
 <script>
     // ==========================================
-    // ⚙️ 보안이 강화된 구글 앱스 스크립트 연결 주소
+    // ⚙️ 보안이 강화된 구글 앱스 스크립트 웹 앱 연결 주소
     // ==========================================
-    const GOOGLE_WEBAPP_URL = "https://script.google.com/macros/s/AKfycbzdolow5_TRW_llcA5kbbBGemhEMrBK20UhrXUePPl8ojzdsIVBAlFpgPAC3wNLrZWDeA/exec";
+    const GOOGLE_WEBAPP_URL = "https://script.google.com/macros/s/AKfycbw65vNeVHyoVDTYAiAsUbnP_zbM47Jq8rgsEYku_pIhlTphEYiW_h7ZAE4JnrfNOz7OWg/exec";
+
+    // ==========================================
+    // ⚙️ 솔라피(Solapi) API 설정 정보 연동 완료
+    // ==========================================
+    const SOLAPI_CONFIG = {
+        apiKey: 'NCSDO3UTATTYM0XD',       
+        apiSecret: 'QLLXM7XQ8CFFZDPITUOAA6VLMUY3X', 
+        fromNumber: '01051543419' // 솔라피 인증 발신번호 지정 완료
+    };
 
     let customers = JSON.parse(localStorage.getItem('crm_customers_modam_v3')) || [];
     let currentQueryUserCode = "";
@@ -369,12 +379,10 @@
         updateAdminDashboard();
     };
 
-    // [신규 가입 시] 구글 스프레드시트로 안전하게 번호를 쏘는 기능 통합
-    async function submitCouponRegistration() {
+    function submitCouponRegistration() {
         const name = document.getElementById('custName').value.trim();
-        const phone = document.getElementById('custPhone').value.trim().replace(/[^0-9]/g, ''); // 숫자만 남기기
+        const phone = document.getElementById('custPhone').value.trim();
         let refCode = document.getElementById('custRefCode').value.trim().toUpperCase();
-        
         if (!name || !phone) { alert('이름과 휴대폰 번호를 정확히 입력해주세요.'); return; }
         if (!document.getElementById('agreeRequired').checked) { alert('필수 이용동의가 필요합니다.'); return; }
         if (customers.some(c => c.phone === phone)) { alert('이미 등록 완료된 고객 번호입니다.'); return; }
@@ -387,18 +395,27 @@
             myRefCode: myRefCode, referredBy: refCode || '-', status: 'issued', points: 0
         };
 
-        // 1. 구글 스프레드시트(보안 문자 발송 서버)로 전달
-        try {
-            await fetch(GOOGLE_WEBAPP_URL, {
-                method: "POST",
-                headers: { "Content-Type": "text/plain" },
-                body: JSON.stringify({ phone: phone })
-            });
-        } catch (error) {
-            console.error("구글 시트 전송 누락:", error);
-        }
+        // 1. 구글 시트로 실시간 백업 및 문자 트리거 전송 요청
+        fetch(GOOGLE_WEBAPP_URL, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'text/plain'
+            },
+            body: JSON.stringify({
+                name: name,
+                phone: phone,
+                refCode: refCode || '-'
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            console.log("구글 서버 원격 처리 로그:", data);
+        })
+        .catch(err => {
+            console.error("구글 시트 전송 네트워크 오류:", err);
+        });
 
-        // 2. 대시보드 로컬 앱 데이터 저장 및 화면 전환
+        // 2. 브라우저 로컬 스토리지 데이터 저장 및 화면 전환
         customers.push(newCustomer);
         localStorage.setItem('crm_customers_modam_v3', JSON.stringify(customers));
 
@@ -407,12 +424,10 @@
         
         routeTo('mPageComplete');
         updateAdminDashboard();
-        
-        alert('🎉 등록 정보가 구글 시트에 저장되었으며, 솔라피 알림톡(문자) 발송 요청이 전송되었습니다!');
     }
 
     function lookupCustomerPoint() {
-        const inputPhone = document.getElementById('queryPhone').value.trim().replace(/[^0-9]/g, '');
+        const inputPhone = document.getElementById('queryPhone').value.trim();
         if(!inputPhone) { alert('휴대폰 번호를 입력해주세요.'); return; }
 
         const target = customers.find(c => c.phone === inputPhone);
@@ -542,26 +557,57 @@
     }
 
     // ==========================================
-    // 🚀 수동 발송 시에도 구글 웹 앱 안전 연동 적용
+    // 🚀 솔라피 API 문자 실전 발송 함수
     // ==========================================
     function sendSMSNotification(customerId, type) {
         const cust = customers.find(c => c.id === customerId);
         if (!cust) return;
 
+        let message = "";
+        const baseUrl = window.location.href.split('?')[0].replace(/\/+$/, "");
+        const shareLink = `${baseUrl}?ref=${cust.myRefCode}`;
+
+        if (type === 'welcome') {
+            message = `[모담헤어 분당본점]\n첫 방문 20,000원 우대 시술쿠폰이 발급되었습니다.\n\n▶ 고객명: ${cust.name}님\n▶ 쿠폰번호: ${cust.couponCode}\n\n📅 네이버 빠른예약하기:\n${naverPlaceUrl}\n\n🎁 지인 추천 이벤트\n주변 지인에게 나만의 추천링크를 공유하세요! 지인이 첫 방문 시술 완료 시 고객님께 5,000포인트가 즉시 적립됩니다.\n▶ 초대 링크: ${shareLink}`;
+        } else if (type === 'remind') {
+            message = `[모담헤어 분당본점]\n시술 쿠폰 만료 임박 안내\n\n${cust.name}님, 발급 받으신 첫 방문 20,000원 할인 혜택 만료일이 3일 남았습니다. 조기 만료 전 예약 방문해 주세요.\n\n📅 네이버 빠른예약:\n${naverPlaceUrl}`;
+        }
+
+        const date = new Date().toISOString();
+        const salt = Math.random().toString(36).substring(2, 12);
+        const hmacData = date + salt;
+        const signature = CryptoJS.HmacSHA256(hmacData, SOLAPI_CONFIG.apiSecret).toString(CryptoJS.enc.Hex);
+        const authorizationHeader = `HMAC-SHA256 apiKey=${SOLAPI_CONFIG.apiKey}, date=${date}, salt=${salt}, signature=${signature}`;
+
         const cleanToNumber = cust.phone.replace(/[^0-9]/g, '');
 
-        // 구글 서버로 다시 전송 요청을 전달하여 안전하게 발송
-        fetch(GOOGLE_WEBAPP_URL, {
+        const requestBody = {
+            message: {
+                to: cleanToNumber,
+                from: SOLAPI_CONFIG.fromNumber,
+                text: message
+            }
+        };
+
+        fetch('https://api.solapi.com/messages/v4/send', {
             method: 'POST',
-            headers: { 'Content-Type': 'text/plain' },
-            body: JSON.stringify({ phone: cleanToNumber })
+            headers: {
+                'Authorization': authorizationHeader,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(requestBody)
         })
-        .then(() => {
-            alert(`🚀 [원격 발송 요청 성공] ${cust.name} 고객님께 알림 메시지 발송 신호를 구글 서버로 전달했습니다.`);
+        .then(response => response.json())
+        .then(data => {
+            if (data.statusCode === undefined || data.statusCode === '2000' || data.status === 'SENDING') {
+                alert(`🚀 [발송 성공] ${cust.name} 고객님께 알림 메시지가 원격 정상 전송되었습니다.`);
+            } else {
+                alert(`❌ [발송 오류] 솔라피 에러 코드: ${data.statusCode}\n사유: ${data.errorMessage}`);
+            }
         })
         .catch(error => {
             console.error('Error:', error);
-            alert('❌ 발송 중 네트워크 오류가 발생했습니다.');
+            alert('❌ [네트워크 오류] 솔라피 전송 중 오류가 발생했습니다.');
         });
     }
 
@@ -613,6 +659,7 @@
                     <td>${c.status === 'used' ? '-' : `<button class="btn-sm" onclick="processUseCoupon('${c.id}')">시술확정</button>`}</td>
                     <td>
                         <button class="btn-sm btn-sms" onclick="sendSMSNotification('${c.id}', 'welcome')">🎟️ 즉시 발급</button>
+                        <button class="btn-sm" style="background:#666666; color:white; border:none;" onclick="sendSMSNotification('${c.id}', 'remind')">⏰ 만료 경고</button>
                     </td>
                 `;
                 tblCust.appendChild(tr);
