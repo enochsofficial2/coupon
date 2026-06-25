@@ -141,9 +141,6 @@
         
         .admin-card { background: var(--card-bg); border-radius: 12px; padding: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.02); margin-bottom: 24px; border: 1px solid #EEEEEE; }
         
-        .coupon-search-bar { display: flex; gap: 10px; margin-bottom: 20px; background: #EAEAEA; padding: 15px; border-radius: 10px; align-items: center; }
-        .coupon-search-bar input { flex: 1; padding: 10px; border: 1px solid #CCC; border-radius: 6px; font-size: 0.9rem; font-weight: bold; text-transform: uppercase; }
-        
         table { width: 100%; border-collapse: collapse; font-size: 0.85rem; text-align: left; }
         th, td { padding: 12px 10px; border-bottom: 1px solid #EEEEEE; vertical-align: middle; }
         th { background-color: #FAFAFA; color: var(--primary-color); font-weight: 700; }
@@ -162,7 +159,6 @@
         .btn-charge { background-color: #03C75A; color: white; border: none; font-weight: bold; }
         .btn-charge:hover { background-color: #02b14f; }
     </style>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
 </head>
 <body>
 
@@ -170,6 +166,7 @@
     <div class="mobile-section">
         <div class="mobile-phone">
             
+            <!-- 랜딩 페이지 -->
             <div id="mPageLanding" class="mobile-page active">
                 <div class="brand-logo-container">
                     <h1 class="brand-logo-text">MODAM</h1>
@@ -179,11 +176,14 @@
                     <p style="margin:0; font-size:0.85rem; color:var(--secondary-color); letter-spacing: 0.5px;">지인 추천 리퍼럴 이벤트</p>
                     <h2>첫 방문 감사 우대 쿠폰</h2>
                     <div class="coupon-value">20,000원 할인</div>
+                    <p style="font-size:0.75rem; color:var(--text-muted); margin:0;">✨ 초대 링크 공유 시 친구도 나도 포인트 적립!</p>
                 </div>
                 <button class="btn" onclick="routeTo('mPageInput')" style="margin-bottom: 12px;">추천인 등록하고 쿠폰 발급</button>
                 <button class="btn btn-outline" onclick="routeTo('mPageQuery')" style="margin-bottom: 12px;">🔍 내 포인트 및 추천현황 조회</button>
+                <a class="btn btn-naver" href="https://map.naver.com/p/search/%EB%AA%A8%EB%8B%B4%ED%97%A4%EC%96%B4/place/2026013877" target="_blank">🗓️ 모담헤어 네이버 실시간 예약하기</a>
             </div>
 
+            <!-- 정보 입력 페이지 -->
             <div id="mPageInput" class="mobile-page">
                 <div class="brand-logo-container">
                     <h1 class="brand-logo-text">MODAM</h1>
@@ -200,6 +200,7 @@
                 <button class="btn" onclick="submitCouponRegistration()">헤어 시술 쿠폰 발급</button>
             </div>
 
+            <!-- 발급 완료 페이지 -->
             <div id="mPageComplete" class="mobile-page">
                 <div class="brand-logo-container">
                     <h1 class="brand-logo-text">MODAM</h1>
@@ -214,10 +215,11 @@
                     <span style="font-size: 0.8rem; color: var(--text-muted);">내 고유 추천코드</span><br>
                     <span id="lblMyRefCode" style="color: var(--primary-color); font-size: 1.15rem;">REF-XXXX</span>
                 </div>
-                <button class="btn btn-kakao" onclick="simulateKakaoShare()">💬 카카오톡 초대 링크 복사</button>
+                <button class="btn btn-kakao" onclick="copyInviteLink()">💬 초대 링크 복사하기</button>
                 <button class="btn" style="margin-top:10px; background:#666666;" onclick="resetFormToStart()">처음으로</button>
             </div>
 
+            <!-- 조회 페이지 -->
             <div id="mPageQuery" class="mobile-page">
                 <div class="brand-logo-container">
                     <h1 class="brand-logo-text">MODAM</h1>
@@ -231,6 +233,7 @@
                 <button class="btn btn-outline" onclick="routeTo('mPageLanding')">이전으로</button>
             </div>
 
+            <!-- 조회 결과 페이지 -->
             <div id="mPageQueryResult" class="mobile-page">
                 <div class="brand-logo-container">
                     <h1 class="brand-logo-text">MODAM</h1>
@@ -241,6 +244,7 @@
                     <div class="point-value" id="queryPointDisplay">0 P</div>
                 </div>
                 <div class="ref-display-box">
+                    <span style="font-size: 0.8rem; color: var(--text-muted);">내 고유 추천코드</span><br>
                     <span id="queryMyRefCode" style="font-size: 1.15rem;">REF-XXXX</span>
                 </div>
                 <button class="btn btn-outline" onclick="routeTo('mPageLanding')">처음으로</button>
@@ -249,6 +253,7 @@
         </div>
     </div>
 
+    <!-- 우측 관리자 대시보드 인터페이스 -->
     <div class="admin-section">
         <div class="admin-header">
             <h2>🖤 모담헤어 [분당본점] 리퍼럴 관리 대시보드</h2>
@@ -262,7 +267,7 @@
         </div>
 
         <div class="admin-card">
-            <h3>📱 1. 실시간 시술 접수 리스트 (수동 발송 제어)</h3>
+            <h3>📱 1. 실시간 시술 접수 및 포인트 통제 리스트</h3>
             <table style="width:100%">
                 <thead>
                     <tr>
@@ -270,10 +275,11 @@
                         <th>전화번호</th>
                         <th>쿠폰코드</th>
                         <th>내 추천코드</th>
-                        <th>유입인</th>
+                        <th>유입 추천인</th>
+                        <th>보유 포인트</th>
                         <th>상태</th>
-                        <th>확정</th>
-                        <th>솔라피 원격 전송</th>
+                        <th>매장 인증 및 차감 조절</th>
+                        <th>솔라피 전송</th>
                     </tr>
                 </thead>
                 <tbody id="tblCustomerBody"></tbody>
@@ -283,7 +289,7 @@
 </div>
 
 <script>
-    // ⚙️ 생성하신 구글 웹 앱 URL 주소 자동 매핑 완료
+    // ⚙️ 구글 앱스 스크립트 웹 앱 주소
     const GOOGLE_WEBAPP_URL = "https://script.google.com/macros/s/AKfycbw65vNeVHyoVDTYAiAsUbnP_zbM47Jq8rgsEYku_pIhlTphEYiW_h7ZAE4JnrfNOz7OWg/exec";
 
     let customers = JSON.parse(localStorage.getItem('crm_customers_modam_v3')) || [];
@@ -293,6 +299,7 @@
         document.getElementById(pageId).classList.add('active');
     }
 
+    // 쿠폰 신규 등록
     function submitCouponRegistration() {
         const name = document.getElementById('custName').value.trim();
         const phone = document.getElementById('custPhone').value.trim().replace(/[^0-9]/g, '');
@@ -300,6 +307,13 @@
         
         if (!name || !phone) { alert('이름과 휴대폰 번호를 입력해주세요.'); return; }
         if (!document.getElementById('agreeRequired').checked) { alert('필수 이용동의를 체크해주세요.'); return; }
+
+        // 본인 셀프 추천 방지
+        const myGeneratedRef = 'REF-' + phone.slice(-4);
+        if(refCode === myGeneratedRef) {
+            alert('본인의 추천 코드는 입력하실 수 없습니다.');
+            return;
+        }
 
         const couponCode = 'CP-' + Math.floor(100000 + Math.random() * 900000);
         const myRefCode = 'REF-' + phone.slice(-4).toUpperCase();
@@ -309,14 +323,14 @@
             myRefCode: myRefCode, referredBy: refCode || '-', status: 'issued', points: 0
         };
 
-        // 🚀 [CORS 방어 해결 완료] 구글 시트 백업 및 문자 전송 트리거
+        // 구글 시트 백업 및 문자 자동 발송 트리거
         fetch(GOOGLE_WEBAPP_URL, {
             method: 'POST',
             mode: 'no-cors',
             headers: { 'Content-Type': 'text/plain' },
             body: JSON.stringify({ name: name, phone: phone, refCode: refCode || '-' })
         }).then(() => {
-            console.log("구글 서버 전송 신호 전달 완료");
+            console.log("구글 서버로 전송 신호 전달 완료");
         });
 
         customers.push(newCustomer);
@@ -327,15 +341,87 @@
         
         routeTo('mPageComplete');
         updateAdminDashboard();
-        alert('🎉 쿠폰 발급이 완료되었으며 구글 서버로 알림 문자 신호가 정상 전송되었습니다!');
+        alert('🎉 쿠폰 발급 완료! 구글 시트 저장 및 알림톡 발송 요청이 전송되었습니다.');
     }
 
-    // 대시보드 갱신 및 조회 로직
+    // 시술 완료 확정 및 추천인 5000P 지급 로직 복구
+    function executeCouponUse(id) {
+        let target = customers.find(x => x.id === id);
+        if (!target) return;
+        
+        if (target.status === 'used') {
+            alert('이미 시술 확정이 완료된 고객입니다.');
+            return;
+        }
+        
+        target.status = 'used';
+        
+        // 나를 추천해 준 사람이 대시보드에 있다면 5000 포인트 즉시 지급
+        if (target.referredBy && target.referredBy !== '-') {
+            let recommender = customers.find(x => x.myRefCode === target.referredBy);
+            if (recommender) {
+                recommender.points = (recommender.points || 0) + 5000;
+                alert(`[추천 성공] 추천인(${recommender.name})님에게 5,000포인트가 적립되었습니다!`);
+            } else {
+                alert(`추천인 코드(${target.referredBy})가 등록되어 있으나, 아직 대시보드에 가입되지 않은 코드입니다. (추후 가입 시 합산 반영)`);
+            }
+        }
+        
+        localStorage.setItem('crm_customers_modam_v3', JSON.stringify(customers));
+        updateAdminDashboard();
+        alert(`${target.name}님의 시술 완료 확정이 처리되었습니다.`);
+    }
+
+    // 포인트 수동 차감/조절 기능 복구
+    function deductPoint(id) {
+        let target = customers.find(x => x.id === id);
+        if (!target) return;
+        
+        const inputAmt = document.getElementById(`deduct_${id}`).value;
+        const amt = parseInt(inputAmt, 10);
+        
+        if (isNaN(amt) || amt <= 0) { alert('올바른 포인트를 입력해주세요.'); return; }
+        if ((target.points || 0) < amt) { alert('보유한 포인트보다 차감할 포인트가 더 큽니다.'); return; }
+        
+        target.points = (target.points || 0) - amt;
+        localStorage.setItem('crm_customers_modam_v3', JSON.stringify(customers));
+        updateAdminDashboard();
+        alert(`${target.name}님의 포인트 ${amt}P가 성공적으로 차감되었습니다.`);
+    }
+
+    // 사용자 포인트 실시간 조회
+    function lookupCustomerPoint() {
+        const phone = document.getElementById('queryPhone').value.trim().replace(/[^0-9]/g, '');
+        if (!phone) { alert('전화번호를 입력해주세요.'); return; }
+        
+        const user = customers.find(x => x.phone === phone);
+        if (!user) {
+            alert('등록된 회원 정보가 없습니다. 먼저 쿠폰을 발급해 주세요.');
+            return;
+        }
+        
+        document.getElementById('queryResultTitle').innerText = `${user.name}님의 멤버십 현황`;
+        document.getElementById('queryPointDisplay').innerText = (user.points || 0).toLocaleString() + ' P';
+        document.getElementById('queryMyRefCode').innerText = user.myRefCode;
+        
+        routeTo('mPageQueryResult');
+    }
+
+    // 대시보드 통계 및 테이블 동적 렌더링 복구
     function updateAdminDashboard() {
         if (!document.getElementById('statTotalIssued')) return;
+        
         document.getElementById('statTotalIssued').innerText = customers.length + ' 건';
+        
+        const usedCount = customers.filter(x => x.status === 'used').length;
+        document.getElementById('statTotalUsed').innerText = usedCount + ' 건';
+        
+        const totalPoints = customers.reduce((sum, x) => sum + (x.points || 0), 0);
+        document.getElementById('statTotalPoints').innerText = totalPoints.toLocaleString() + ' P';
+        
         const tblCust = document.getElementById('tblCustomerBody');
         tblCust.innerHTML = '';
+        
         customers.forEach(c => {
             const tr = document.createElement('tr');
             tr.innerHTML = `
@@ -343,10 +429,21 @@
                 <td>${c.phone}</td>
                 <td><code>${c.couponCode}</code></td>
                 <td><small>${c.myRefCode}</small></td>
-                <td>${c.referredBy}</td>
-                <td>${c.status === 'used' ? '완료' : '미방문'}</td>
-                <td><button class="btn-sm" onclick="executeCouponUse('${c.id}')">시술확정</button></td>
-                <td><button class="btn-sm btn-sms" onclick="triggerManualSMS('${c.name}','${c.phone}','${c.refCode}')">🎟️ 문자재발송</button></td>
+                <td><span style="color:#0066cc; font-weight:bold;">${c.referredBy}</span></td>
+                <td><b style="color:#03C75A">${(c.points || 0).toLocaleString()} P</b></td>
+                <td>
+                    <span class="badge ${c.status === 'used' ? 'badge-used' : 'badge-issued'}">
+                        ${c.status === 'used' ? '시술 완료' : '미방문'}
+                    </span>
+                </td>
+                <td>
+                    <button class="btn-sm btn-charge" onclick="executeCouponUse('${c.id}')">시술확정(5000P)</button>
+                    <input type="number" class="input-point-deduct" id="deduct_${c.id}" placeholder="5000">
+                    <button class="btn-sm" onclick="deductPoint('${c.id}')">차감</button>
+                </td>
+                <td>
+                    <button class="btn-sm btn-sms" onclick="triggerManualSMS('${c.name}','${c.phone}','${c.referredBy}')">🎟️ 즉시발급</button>
+                </td>
             `;
             tblCust.appendChild(tr);
         });
@@ -363,12 +460,43 @@
         });
     }
 
-    function executeCouponUse(id) {
-        let c = customers.find(x => x.id === id);
-        if(c) { c.status = 'used'; localStorage.setItem('crm_customers_modam_v3', JSON.stringify(customers)); updateAdminDashboard(); alert('시술 처리 완료');}
+    function copyInviteLink() {
+        const myCode = document.getElementById('lblMyRefCode').innerText;
+        const currentUrl = window.location.href.split('?')[0];
+        const inviteUrl = `${currentUrl}?ref=${myCode}`;
+        
+        navigator.clipboard.writeText(`[모담헤어 분당본점] 지인 초대 이벤트! 🎉\n아래 링크로 등록하시면 20,000원 즉시 할인 쿠폰이 발급됩니다.\n추천인 코드: ${myCode}\n\n▶ 링크 바로가기: ${inviteUrl}`).then(() => {
+            alert('초대 문구와 링크가 클립보드에 복사되었습니다! 카톡이나 문자로 친구에게 공유해보세요.');
+        });
     }
-    function resetFormToStart() { routeTo('mPageLanding'); }
-    window.onload = function() { updateAdminDashboard(); };
+
+    function clearSystemData() {
+        if (confirm('정말로 대시보드의 모든 데이터를 초기화하시겠습니까? (로컬 저장소 데이터가 삭제됩니다)')) {
+            localStorage.removeItem('crm_customers_modam_v3');
+            customers = [];
+            updateAdminDashboard();
+            alert('초기화되었습니다.');
+        }
+    }
+
+    function resetFormToStart() {
+        document.getElementById('custName').value = '';
+        document.getElementById('custPhone').value = '';
+        document.getElementById('custRefCode').value = '';
+        document.getElementById('agreeRequired').checked = false;
+        routeTo('mPageLanding');
+    }
+
+    window.onload = function() {
+        // 링크에 추천인 파라미터가 있을 시 자동 입력 기능
+        const urlParams = new URLSearchParams(window.location.search);
+        const refParam = urlParams.get('ref');
+        if (refParam) {
+            routeTo('mPageInput');
+            document.getElementById('custRefCode').value = refParam.toUpperCase();
+        }
+        updateAdminDashboard();
+    };
 </script>
 </body>
 </html>
