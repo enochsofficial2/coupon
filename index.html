@@ -185,7 +185,7 @@
                 <div style="font-size: 0.85rem; color:#444444; margin-bottom: 25px; line-height: 1.5; text-align: center;">
                     ✂️ 초대 링크를 공유하고 친구가 첫 시술을 완료하면, 고객님께 <strong>5,000 포인트</strong>가 즉시 적립됩니다!
                 </div>
-                <button class="btn" onclick="routeToInputPage()" style="margin-bottom: 12px;">추천인 등록하고 쿠폰 발급</button>
+                <button class="btn" onclick="routeTo('mPageInput')" style="margin-bottom: 12px;">추천인 등록하고 쿠폰 발급</button>
                 <button class="btn btn-outline" onclick="routeTo('mPageQuery')" style="margin-bottom: 12px;">🔍 내 포인트 및 추천현황 실시간 조회</button>
                 <a href="https://map.naver.com/p/search/%EB%AA%A8%EB%8B%B4%ED%97%A4%EC%96%B4/place/2026013877?placePath=/stylist" target="_blank" class="btn btn-outline" style="border-color:#E0E0E0; color:#555555; font-size:0.85rem;">📅 모담헤어 네이버 실시간 예약하기</a>
             </div>
@@ -346,6 +346,9 @@
 </div>
 
 <script>
+    // ==========================================
+    // ⚙️ 보안이 강화된 구글 앱스 스크립트 연결 주소
+    // ==========================================
     const GOOGLE_WEBAPP_URL = "https://script.google.com/macros/s/AKfycbzdolow5_TRW_llcA5kbbBGemhEMrBK20UhrXUePPl8ojzdsIVBAlFpgPAC3wNLrZWDeA/exec";
 
     let customers = JSON.parse(localStorage.getItem('crm_customers_modam_v3')) || [];
@@ -357,51 +360,24 @@
         document.getElementById(pageId).classList.add('active');
     }
 
-    // [수정] 등록 페이지 진입 시 인풋 폼 및 발급완료 화면의 텍스트 잔상 완전 초기화
-    function routeToInputPage() {
-        document.getElementById('custName').value = '';
-        document.getElementById('custPhone').value = '';
-        document.getElementById('custRefCode').value = '';
-        document.getElementById('agreeRequired').checked = false;
-        document.getElementById('agreeMarketing').checked = false;
-        
-        document.getElementById('lblCouponCode').innerText = "CP-XXXXXX";
-        document.getElementById('lblMyRefCode').innerText = "REF-XXXX";
-        
-        routeTo('mPageInput');
-    }
-
     window.onload = function() {
         const urlParams = new URLSearchParams(window.location.search);
         if (urlParams.get('ref')) {
-            routeToInputPage(); // 기존 잔상 제거 함수 경유
             document.getElementById('custRefCode').value = urlParams.get('ref').toUpperCase();
+            routeTo('mPageInput');
         }
         updateAdminDashboard();
     };
 
+    // [신규 가입 시] 구글 스프레드시트로 안전하게 번호를 쏘는 기능 통합
     async function submitCouponRegistration() {
         const name = document.getElementById('custName').value.trim();
-        const phone = document.getElementById('custPhone').value.trim().replace(/[^0-9]/g, ''); 
+        const phone = document.getElementById('custPhone').value.trim().replace(/[^0-9]/g, ''); // 숫자만 남기기
         let refCode = document.getElementById('custRefCode').value.trim().toUpperCase();
         
         if (!name || !phone) { alert('이름과 휴대폰 번호를 정확히 입력해주세요.'); return; }
         if (!document.getElementById('agreeRequired').checked) { alert('필수 이용동의가 필요합니다.'); return; }
-        
-        const myGeneratedRef = 'REF-' + phone.slice(-4).toUpperCase();
-        if(refCode === myGeneratedRef) {
-            alert('본인의 추천 코드는 입력하실 수 없습니다.');
-            return;
-        }
-
-        if (customers.some(c => c.phone === phone)) { 
-            alert('이미 등록 완료된 고객 번호입니다. 기존 코드가 유지됩니다.'); 
-            const existing = customers.find(c => c.phone === phone);
-            document.getElementById('lblCouponCode').innerText = existing.couponCode;
-            document.getElementById('lblMyRefCode').innerText = existing.myRefCode;
-            routeTo('mPageComplete');
-            return; 
-        }
+        if (customers.some(c => c.phone === phone)) { alert('이미 등록 완료된 고객 번호입니다.'); return; }
 
         const couponCode = 'CP-' + Math.floor(100000 + Math.random() * 900000);
         const myRefCode = 'REF-' + phone.slice(-4).toUpperCase();
@@ -411,6 +387,7 @@
             myRefCode: myRefCode, referredBy: refCode || '-', status: 'issued', points: 0
         };
 
+        // 1. 구글 스프레드시트(보안 문자 발송 서버)로 전달
         try {
             await fetch(GOOGLE_WEBAPP_URL, {
                 method: "POST",
@@ -421,6 +398,7 @@
             console.error("구글 시트 전송 누락:", error);
         }
 
+        // 2. 대시보드 로컬 앱 데이터 저장 및 화면 전환
         customers.push(newCustomer);
         localStorage.setItem('crm_customers_modam_v3', JSON.stringify(customers));
 
@@ -563,12 +541,16 @@
         }
     }
 
+    // ==========================================
+    // 🚀 수동 발송 시에도 구글 웹 앱 안전 연동 적용
+    // ==========================================
     function sendSMSNotification(customerId, type) {
         const cust = customers.find(c => c.id === customerId);
         if (!cust) return;
 
         const cleanToNumber = cust.phone.replace(/[^0-9]/g, '');
 
+        // 구글 서버로 다시 전송 요청을 전달하여 안전하게 발송
         fetch(GOOGLE_WEBAPP_URL, {
             method: 'POST',
             headers: { 'Content-Type': 'text/plain' },
@@ -630,7 +612,7 @@
                     <td>${c.status === 'used' ? '<span class="badge badge-used">시술완료</span>' : '<span class="badge badge-issued">미방문</span>'}</td>
                     <td>${c.status === 'used' ? '-' : `<button class="btn-sm" onclick="processUseCoupon('${c.id}')">시술확정</button>`}</td>
                     <td>
-                        <button class="btn-sm btn-sms" onclick="sendSMSNotification('${c.id}', 'welcome')">🎟️ 즉시 발급</button>
+                        <button class="btn-sm btn-sms" onclick="sendSMSNotification('${c.id}', 'welcome')">🚨 즉시 발급</button>
                     </td>
                 `;
                 tblCust.appendChild(tr);
@@ -671,17 +653,12 @@
         }
     }
 
-    // [수정] 메인으로 나갈 때 데이터 잔상을 완전히 밀어버리도록 재보완
     function resetFormToStart() {
         document.getElementById('custName').value = '';
         document.getElementById('custPhone').value = '';
         document.getElementById('custRefCode').value = '';
         document.getElementById('agreeRequired').checked = false;
         document.getElementById('agreeMarketing').checked = false;
-        
-        document.getElementById('lblCouponCode').innerText = "CP-XXXXXX";
-        document.getElementById('lblMyRefCode').innerText = "REF-XXXX";
-        
         routeTo('mPageLanding');
     }
 
