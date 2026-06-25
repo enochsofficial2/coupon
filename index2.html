@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>모담헤어 [분당본점] 리퍼럴 관리 대시보드</title>
+    <style>
+        :root {
+            --primary-color: #111111;    
+            --secondary-color: #777777;  
+            --bg-color: #F6F6F6;         
+            --card-bg: #FFFFFF;
+            --text-main: #111111;
+            --text-muted: #888888;
+            --danger-color: #E06666;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            margin: 0;
+            padding: 30px;
+        }
+
+        .admin-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; }
+        
+        .stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-bottom: 25px; }
+        .stat-card { background: var(--card-bg); padding: 22px; border-radius: 8px; text-align: center; border: 1px solid #EAEAEA; font-size: 0.9rem; color: #444444; }
+        .stat-card .num { font-size: 1.6rem; font-weight: 800; color: var(--primary-color); margin-top: 8px; }
+        
+        .admin-card { background: var(--card-bg); border-radius: 8px; padding: 24px; margin-bottom: 24px; border: 1px solid #EAEAEA; }
+        .admin-card h3 { margin-top: 0; margin-bottom: 20px; font-size: 1.1rem; }
+        
+        table { width: 100%; border-collapse: collapse; font-size: 0.85rem; text-align: center; }
+        th, td { padding: 12px 8px; border-bottom: 1px solid #EEEEEE; vertical-align: middle; }
+        th { background-color: #FAFAFA; color: #666666; font-weight: 600; font-size: 0.8rem; }
+        
+        .badge-status { padding: 5px 10px; border-radius: 4px; font-weight: bold; font-size: 0.75rem; color: white; display: inline-block; }
+        .status-ready { background-color: #666666; }
+        .status-complete { background-color: #111111; }
+
+        .btn-confirm { background-color: #03C75A; color: white; border: none; padding: 6px 12px; border-radius: 4px; font-weight: bold; cursor: pointer; font-size: 0.8rem; }
+        .btn-solapi { background-color: #333333; color: white; border: none; padding: 6px 12px; border-radius: 4px; font-weight: bold; cursor: pointer; font-size: 0.8rem; }
+        
+        .input-point { width: 60px; padding: 5px; border: 1px solid #DCDCDC; border-radius: 4px; text-align: center; font-size: 0.8rem; margin-right: 4px; }
+        .btn-pt-action { padding: 5px 8px; border: none; font-weight: bold; border-radius: 4px; cursor: pointer; font-size: 0.75rem; color: white; }
+        .btn-pt-give { background-color: #03C75A; }
+        .btn-pt-take { background-color: #777777; }
+        .btn-danger { background-color: var(--danger-color); border: none; color: white; font-weight: bold; padding: 6px 12px; border-radius: 4px; cursor: pointer; }
+    </style>
+</head>
+<body>
+
+    <div class="admin-header">
+        <h2 style="font-size: 1.35rem; font-weight: 800; margin: 0;">🖤 모담헤어 [분당본점] 리퍼럴 관리 대시보드</h2>
+        <div>
+            <button class="btn-confirm" onclick="updateAdminDashboard()" style="margin-right: 8px;">🔄 새로고침</button>
+            <button class="btn-danger" onclick="clearSystemData()">전체 데이터 초기화</button>
+        </div>
+    </div>
+
+    <!-- 상단 3개 통계 영역 (image_07a43f.png 매칭) -->
+    <div class="stats-grid">
+        <div class="stat-card"><div>총 쿠폰 발급</div><div class="num" id="statTotalIssued">0 건</div></div>
+        <div class="stat-card"><div>시술 완료 카운트</div><div class="num" id="statTotalUsed">0 건</div></div>
+        <div class="stat-card"><div>누적 지급 포인트</div><div class="num" id="statTotalPoints">0 P</div></div>
+    </div>
+
+    <!-- 통합 테이블 영역 -->
+    <div class="admin-card">
+        <h3>🎆 1. 실시간 시술 접수 및 포인트 제어 대시보드</h3>
+        <div style="overflow-x: auto;">
+            <table>
+                <thead>
+                    <tr>
+                        <th>고객명</th>
+                        <th>전화번호</th>
+                        <th>쿠폰코드</th>
+                        <th>내 추천코드</th>
+                        <th>유입 추천인</th>
+                        <th>보유 포인트</th>
+                        <th>상태</th>
+                        <th>시술 인증</th>
+                        <th>포인트 임의 조절 (지급 및 차감)</th>
+                        <th>솔라피 전송</th>
+                    </tr>
+                </thead>
+                <tbody id="tblMainDashboardBody"></tbody>
+            </table>
+        </div>
+    </div>
+
+<script>
+    const GOOGLE_WEBAPP_URL = "https://script.google.com/macros/s/AKfycbzdolow5_TRW_llcA5kbbBGemhEMrBK20UhrXUePPl8ojzdsIVBAlFpgPAC3wNLrZWDeA/exec";
+
+    let customers = [];
+
+    // 대시보드 로드 시 동기화 처리
+    window.onload = function() {
+        updateAdminDashboard();
+        // 5초마다 고객 리스트 자동 새로고침 세팅
+        setInterval(updateAdminDashboard, 5000);
+    };
+
+    function updateAdminDashboard() {
+        customers = JSON.parse(localStorage.getItem('crm_customers_modam_v3')) || [];
+
+        const totalIssued = customers.length;
+        const totalUsed = customers.filter(c => c.status === 'used').length;
+        const totalPoints = customers.reduce((sum, c) => sum + (Number(c.points) || 0), 0);
+
+        document.getElementById('statTotalIssued').innerText = totalIssued + ' 건';
+        document.getElementById('statTotalUsed').innerText = totalUsed + ' 건';
+        document.getElementById('statTotalPoints').innerText = totalPoints.toLocaleString() + ' P';
+
+        const tbody = document.getElementById('tblMainDashboardBody');
+        tbody.innerHTML = '';
+
+        if (customers.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="10" style="color:var(--text-muted); padding:30px;">접수된 데이터가 없습니다.</td></tr>`;
+            return;
+        }
+
+        customers.forEach(c => {
+            const tr = document.createElement('tr');
+            
+            const statusBadge = c.status === 'used' 
+                ? '<span class="badge-status status-complete">시술 완료</span>' 
+                : '<span class="badge-status status-ready">미방문</span>';
+                
+            const actionButton = c.status === 'used'
+                ? '-'
+                : `<button class="btn-confirm" onclick="executeCouponUse('${c.id}')">시술 확정</button>`;
+
+            tr.innerHTML = `
+                <td>${c.name}</td>
+                <td>${c.phone}</td>
+                <td>${c.couponCode}</td>
+                <td>${c.myRefCode}</td>
+                <td style="color:#0066cc;">${c.referredBy}</td>
+                <td style="color:#03C75A; font-weight:bold;">${(c.points || 0).toLocaleString()} P</td>
+                <td>${statusBadge}</td>
+                <td>${actionButton}</td>
+                <td>
+                    <input type="number" class="input-point" id="pt_input_${c.id}" placeholder="5000">
+                    <button class="btn-pt-action btn-pt-give" onclick="adjustPoint('${c.id}', 'give')">지급</button>
+                    <button class="btn-pt-action btn-pt-take" onclick="adjustPoint('${c.id}', 'take')">차감</button>
+                </td>
+                <td>
+                    <button class="btn-solapi" onclick="sendSMSNotification('${c.id}')">📲 즉시발급</button>
+                </td>
+            `;
+            tbody.appendChild(tr);
+        });
+    }
+
+    function executeCouponUse(customerId) {
+        let cust = customers.find(c => c.id === customerId);
+        if(!cust) return;
+        
+        cust.status = 'used';
+        if (cust.referredBy !== '-') {
+            let recommender = customers.find(c => c.myRefCode.toUpperCase() === cust.referredBy.toUpperCase());
+            if (recommender) {
+                recommender.points = (Number(recommender.points) || 0) + 5000;
+            }
+        }
+        localStorage.setItem('crm_customers_modam_v3', JSON.stringify(customers));
+        updateAdminDashboard();
+        alert(`${cust.name} 고객님의 시술 확정 처리가 완료되었습니다.`);
+    }
+
+    function adjustPoint(customerId, action) {
+        let cust = customers.find(c => c.id === customerId);
+        if (!cust) return;
+
+        const val = parseInt(document.getElementById(`pt_input_${customerId}`).value.trim());
+        if (isNaN(val) || val <= 0) { alert('올바른 포인트를 입력하세요.'); return; }
+
+        if (action === 'give') {
+            cust.points = (Number(cust.points) || 0) + val;
+        } else if (action === 'take') {
+            if ((cust.points || 0) < val) { alert('보유 포인트가 부족합니다.'); return; }
+            cust.points = (cust.points || 0) - val;
+        }
+
+        localStorage.setItem('crm_customers_modam_v3', JSON.stringify(customers));
+        updateAdminDashboard();
+    }
+
+    function sendSMSNotification(customerId) {
+        const cust = customers.find(c => c.id === customerId);
+        if (!cust) return;
+
+        fetch(GOOGLE_WEBAPP_URL, {
+            method: 'POST',
+            headers: { "Content-Type": "application/x-www-form-urlencoded" },
+            body: new URLSearchParams({
+                "action": "sms", "name": cust.name, "phone": cust.phone, "couponCode": cust.couponCode
+            })
+        })
+        .then(() => alert(`🚀 [${cust.name}] 고객님 솔라피 재발송 신호 완료.`))
+        .catch(() => alert(`전송 실패`));
+    }
+
+    function clearSystemData() {
+        if (confirm('전체 데이터를 초기화하시겠습니까?')) {
+            localStorage.removeItem('crm_customers_modam_v3');
+            updateAdminDashboard();
+        }
+    }
+</script>
+</body>
+</html>
