@@ -128,7 +128,7 @@
 
 <script>
 // ★ 여기에 구글 Apps Script URL 붙여넣기 ★
-const API = 'https://script.google.com/macros/s/AKfycbz7xlgxum3geNCmDlj98Av59KxYimNlsz4tJRbWOS_6MDFreNdcu1eOmcXYznAG0YE5zA/exec';
+const API = 'https://script.google.com/macros/s/AKfycbw22APwcIrDC-Mcjb8G81e3xMsz0BndpHOMS5PLJ0mOQS8GDD2F9Qem9pseIhIP4EbPIg/exec';
 const ADMIN_PW = 'modamhair2024'; // ← 비밀번호 변경 가능
 
 let customers = [];
@@ -263,6 +263,9 @@ async function searchCoupon() {
 }
 
 async function useCoupon(couponCode) {
+    const c = customers.find(x => (x.coupon_code||'').toUpperCase() === couponCode.toUpperCase());
+    const name = c ? c.name : '고객';
+    if (!confirm(`${name} 고객님 시술을 확정할까요?\n\n쿠폰번호: ${couponCode}\n확정 시 추천인 포인트가 자동 적립됩니다.`)) return;
     load(true);
     try {
         const d = await post({ action:'useCoupon', couponCode });
