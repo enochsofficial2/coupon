@@ -199,6 +199,7 @@ async function submit() {
     if (!name) { alert('고객명을 입력해주세요.'); return; }
     if (phone.length < 10) { document.getElementById('e-phone').style.display='block'; return; }
     if (!must) { document.getElementById('e-consent').style.display='block'; return; }
+    if (!mkt) { alert('마케팅 혜택 정보 수신 동의는 필수입니다.'); return; }
 
     load(true);
     try {
