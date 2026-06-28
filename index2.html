@@ -128,7 +128,7 @@
 
 <script>
 // ★ 여기에 구글 Apps Script URL 붙여넣기 ★
-const API = 'https://script.google.com/macros/s/AKfycbwlRBiwHbMl-6ERcuGRoWAPRIoDjO75zpVhhkkU4KfMNindabQEcPRyW3SOJAv4geBFAg/exec';
+const API = 'https://script.google.com/macros/s/AKfycbxIk3rBdZemDFzeas0JXABrSfmTrn-4_ino43cMAsWIhByiQvry34jwrNL0L-Bj5nUc3w/exec';
 const ADMIN_PW = 'modamhair2024'; // ← 비밀번호 변경 가능
 
 let customers = [];
@@ -145,13 +145,28 @@ function login() {
 
 function load(v) { document.getElementById('loading').classList.toggle('on', v); }
 
+function jsonp(params) {
+  return new Promise((resolve, reject) => {
+    const cb = 'cb_' + Date.now();
+    const s = document.createElement('script');
+    const qs = new URLSearchParams({...params, callback: cb}).toString();
+    s.src = API + '?' + qs;
+    window[cb] = (data) => { delete window[cb]; document.body.removeChild(s); resolve(data); };
+    s.onerror = reject;
+    document.body.appendChild(s);
+  });
+}
 async function post(body) {
-    const r = await fetch(API, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body) });
-    return r.json();
+  const p = { action: body.action };
+  if (body.couponCode) p.couponCode = body.couponCode;
+  if (body.phone) p.phone = body.phone;
+  if (body.name) p.name = body.name;
+  const needData = ['register','addPoint','saveMemo'];
+  if (needData.includes(body.action)) p.data = encodeURIComponent(JSON.stringify(body));
+  return jsonp(p);
 }
 async function get(p) {
-    const r = await fetch(API + '?' + new URLSearchParams(p));
-    return r.json();
+  return jsonp(p);
 }
 
 async function loadAll() {
