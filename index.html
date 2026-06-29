@@ -198,6 +198,7 @@ async function submit() {
     const ref = document.getElementById('f-ref').value.trim().toUpperCase();
     const must = document.getElementById('c-must').checked;
     const mkt = document.getElementById('c-mkt').checked;
+    const addr = document.getElementById('f-addr').value.trim();
 
     ['e-phone','e-consent','e-ref','e-global'].forEach(id => document.getElementById(id).style.display='none');
 
@@ -209,7 +210,7 @@ async function submit() {
 
     load(true);
     try {
-        const d = await post({ action:'register', name, phone, personalConsent:must, marketingConsent:mkt, referredByCode: ref||null });
+        const d = await post({ action:'register', name, phone, personalConsent:must, marketingConsent:mkt, referredByCode: ref||null, address: addr||'' });
         if (!d.success) {
             const errEl = document.getElementById(d.message.includes('추천') ? 'e-ref' : 'e-global');
             errEl.textContent = d.message;
