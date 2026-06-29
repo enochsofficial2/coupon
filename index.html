@@ -198,7 +198,8 @@ async function submit() {
     const ref = document.getElementById('f-ref').value.trim().toUpperCase();
     const must = document.getElementById('c-must').checked;
     const mkt = document.getElementById('c-mkt').checked;
-    const addr = document.getElementById('f-addr').value.trim();
+    const addrEl = document.getElementById('f-addr');
+    const addr = addrEl ? addrEl.value.trim() : '';
 
     ['e-phone','e-consent','e-ref','e-global'].forEach(id => document.getElementById(id).style.display='none');
 
