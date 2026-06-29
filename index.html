@@ -83,6 +83,11 @@
             <input type="text" id="f-ref" placeholder="예: REF-1234" oninput="this.value=this.value.toUpperCase()">
             <div class="err" id="e-ref">유효하지 않은 추천인 코드입니다.</div>
         </div>
+        <div class="fg">
+            <label>거주 지역 <span style="color:var(--danger);">*</span></label>
+            <input type="text" id="f-addr" placeholder="예: 판교동, 분당동, 수내동">
+            <div style="font-size:0.78rem;color:#888;margin-top:3px;">~동까지만 입력해주세요.</div>
+        </div>
         <div class="chk"><input type="checkbox" id="c-must"><label for="c-must"><strong>[필수]</strong> 개인정보 수집 및 이용 동의 (이름·전화번호 / 쿠폰발급·추천관리 / 1년 보유)</label></div>
         <div class="chk"><input type="checkbox" id="c-mkt"><label for="c-mkt"><strong>[필수]</strong> 마케팅 혜택 정보 수신 동의</label></div>
         <div class="err" id="e-consent" style="margin-bottom:8px;">필수 동의가 필요합니다.</div>
@@ -143,7 +148,7 @@
 
 <script>
 // ★ 여기에 구글 Apps Script URL 붙여넣기 ★
-const API = 'https://script.google.com/macros/s/AKfycbxIP_P7DNbxLSdgWbn05MwvPvwMl_f12w1j9-4UecsbsmYjW0CFhOkxVHSnYs9QvMRjig/exec';
+const API = 'https://script.google.com/macros/s/AKfycbwlHiSd7J7-bQGygDutwf7JCFlMV259BBdAWHkwu8u2rsyris-hEVuLECeC48ZeH6Q0AA/exec';
 
 let myCode = '';
 let queryCode = '';
@@ -198,6 +203,7 @@ async function submit() {
 
     if (!name) { alert('고객명을 입력해주세요.'); return; }
     if (phone.length < 10) { document.getElementById('e-phone').style.display='block'; return; }
+    if (!addr) { alert('거주 지역을 입력해주세요.'); return; }
     if (!must) { document.getElementById('e-consent').style.display='block'; return; }
     if (!mkt) { alert('마케팅 혜택 정보 수신 동의는 필수입니다.'); return; }
 
