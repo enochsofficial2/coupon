@@ -101,7 +101,7 @@
                             <th>유입추천인</th><th>포인트</th><th>시술상태</th><th>현장인증</th><th>문자발송</th>
                         </tr>
                     </thead>
-                    <tbody id="t-cust"><tr><td colspan="9" style="text-align:center;color:#888;padding:30px;">로딩 중...</td></tr></tbody>
+                    <tbody id="t-cust"><tr><td colspan="10" style="text-align:center;color:#888;padding:30px;">로딩 중...</td></tr></tbody>
                 </table>
             </div>
         </div>
@@ -128,7 +128,7 @@
 
 <script>
 // ★ 여기에 구글 Apps Script URL 붙여넣기 ★
-const API = 'https://script.google.com/macros/s/AKfycbxIP_P7DNbxLSdgWbn05MwvPvwMl_f12w1j9-4UecsbsmYjW0CFhOkxVHSnYs9QvMRjig/exec';
+const API = 'https://script.google.com/macros/s/AKfycbwlHiSd7J7-bQGygDutwf7JCFlMV259BBdAWHkwu8u2rsyris-hEVuLECeC48ZeH6Q0AA/exec';
 const ADMIN_PW = 'modamhair2024'; // ← 비밀번호 변경 가능
 
 let customers = [];
@@ -197,11 +197,12 @@ function renderAll() {
 
 function renderCustomers(list) {
     const tbody = document.getElementById('t-cust');
-    if (!list.length) { tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;color:#888;padding:30px;">데이터 없음</td></tr>'; return; }
+    if (!list.length) { tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;color:#888;padding:30px;">데이터 없음</td></tr>'; return; }
     tbody.innerHTML = list.map(c => `
         <tr>
             <td><strong>${c.name}</strong></td>
             <td>${fmtPhone(c.phone)}</td>
+            <td>${c.address||'—'}</td>
             <td><code style="font-size:0.78rem;">${c.coupon_code||'—'}</code></td>
             <td><small>${c.my_referral_code||'—'}</small></td>
             <td>${c.referred_by_code||'—'}</td>
@@ -313,8 +314,8 @@ async function clearAll() {
 
 function downloadCSV() {
     if (!customers.length) { alert('데이터가 없습니다.'); return; }
-    const headers = ['고객명','전화번호','쿠폰코드','내추천코드','입력추천코드','포인트','상태','발급일','사용일','마케팅동의'];
-    const rows = customers.map(c => [c.name, c.phone, c.coupon_code, c.my_referral_code, c.referred_by_code||'', c.total_points||0, c.coupon_status||'', c.issued_at||'', c.used_at||'', c.marketing_consent]);
+    const headers = ['고객명','전화번호','거주지역','쿠폰코드','내추천코드','입력추천코드','포인트','상태','발급일','사용일','마케팅동의'];
+    const rows = customers.map(c => [c.name, c.phone, c.address||'', c.coupon_code, c.my_referral_code, c.referred_by_code||'', c.total_points||0, c.coupon_status||'', c.issued_at||'', c.used_at||'', c.marketing_consent]);
     const csv = '\uFEFF' + [headers,...rows].map(r => r.map(v => `"${String(v).replace(/"/g,'""')}"`).join(',')).join('\n');
     const a = document.createElement('a');
     a.href = URL.createObjectURL(new Blob([csv], {type:'text/csv;charset=utf-8'}));
