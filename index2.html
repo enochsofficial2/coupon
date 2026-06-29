@@ -128,17 +128,23 @@
 
 <script>
 // ★ 여기에 구글 Apps Script URL 붙여넣기 ★
-const API = 'https://script.google.com/macros/s/AKfycbwlHiSd7J7-bQGygDutwf7JCFlMV259BBdAWHkwu8u2rsyris-hEVuLECeC48ZeH6Q0AA/exec';
-const ADMIN_PW = 'modamhair2024'; // ← 비밀번호 변경 가능
+const API = 'https://script.google.com/macros/s/AKfycbyfMHvt2KXZPlhYOdh7EkMYzgLUZVsbC-pry6JpN7eQ3wRpcm-V5j8v6ibalNu11r-zTg/exec';
 
 let customers = [];
 
-function login() {
-    if (document.getElementById('pw').value === ADMIN_PW) {
-        document.getElementById('login-wrap').style.display = 'none';
-        document.getElementById('app').style.display = 'block';
-        loadAll();
-    } else {
+async function login() {
+    const pw = document.getElementById('pw').value;
+    if (!pw) return;
+    try {
+        const d = await jsonp({ action: 'adminLogin', password: pw });
+        if (d.success) {
+            document.getElementById('login-wrap').style.display = 'none';
+            document.getElementById('app').style.display = 'block';
+            loadAll();
+        } else {
+            document.getElementById('pw-err').style.display = 'block';
+        }
+    } catch(e) {
         document.getElementById('pw-err').style.display = 'block';
     }
 }
